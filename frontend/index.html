@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proposal Insight Engine | MSU-IIT</title>
+  <meta name="description" content="MSU-IIT Administrative Cluster Proposal Analytics Dashboard" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">🎓</div>
+    <div class="sidebar-title">Proposal Insight<br>Engine</div>
+    <div class="sidebar-version">MSU-IIT · v7.0</div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <nav class="sidebar-nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="navigate('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+    <button class="nav-btn" id="nav-upload" onclick="navigate('upload')"><span class="nav-icon">📁</span> Upload File</button>
+    <button class="nav-btn hidden" id="nav-back" onclick="navigate('dashboard')"><span class="nav-icon">←</span> Back to Dashboard</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-footer">KeyBERT · Supabase · FastAPI</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main" id="main">
+  <div class="toast hidden" id="toast"></div>
+
+  <!-- PAGE: Dashboard -->
+  <section class="page" id="page-dashboard">
+    <header class="page-header">
+      <div class="gold-bar"></div>
+      <h1>Proposal Insight Engine</h1>
+      <p>Mindanao State University – Iligan Institute of Technology &nbsp;|&nbsp; Administrative Cluster Analytics</p>
+    </header>
+    <div class="summary-row">
+      <span class="summary-label">Total proposals indexed:</span>
+      <span class="stat-badge" id="total-badge">—</span>
+      <button class="btn-refresh" onclick="loadDashboard()" title="Refresh">↺</button>
+    </div>
+    <div class="section-title">Administrative Clusters</div>
+    <div class="cards-grid" id="cards-grid">
+      <div class="loading-block"><div class="spinner"></div><span>Loading clusters…</span></div>
+    </div>
+    <div id="charts-section" class="hidden">
+      <div class="section-title">Dashboard Analytics</div>
+      <div class="charts-row">
+        <div class="chart-card"><div class="chart-title">Distribution (Donut)</div><canvas id="donut-chart"></canvas></div>
+        <div class="chart-card chart-card--wide"><div class="chart-title">Proposals by Cluster</div><canvas id="bar-chart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE: Cluster Detail -->
+  <section class="page hidden" id="page-detail">
+    <div class="detail-header" id="detail-header"></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-proposals-btn" onclick="switchTab('proposals')">📋 All Proposals</button>
+      <button class="tab-btn" id="tab-keywords-btn" onclick="switchTab('keywords')">🔑 Keyword Analysis</button>
+    </div>
+    <div class="tab-panel" id="tab-proposals">
+      <div class="loading-block hidden" id="proposals-loading"><div class="spinner"></div><span>Loading proposals…</span></div>
+      <div id="proposals-table-wrap"></div>
+    </div>
+    <div class="tab-panel hidden" id="tab-keywords">
+      <div class="section-title">Configure Analysis</div>
+      <div class="kw-controls">
+        <div class="form-group"><label for="cat-col-select">📂 Category Column</label><select id="cat-col-select" class="form-select"></select></div>
+        <div class="form-group"><label for="kw-col-select">🔍 Keyword Source Column</label><select id="kw-col-select" class="form-select"></select></div>
+        <button class="btn-primary btn-analyze" id="btn-run-kw" onclick="runKeywords()">⚡ Run KeyBERT Analysis</button>
+      </div>
+      <div class="loading-block hidden" id="kw-loading"><div class="spinner"></div><span>Running KeyBERT analysis…</span></div>
+      <div id="kw-charts-section"></div>
+      <div id="kw-results"></div>
+    </div>
+  </section>
+
+  <!-- PAGE: Upload -->
+  <section class="page hidden" id="page-upload">
+    <header class="page-header">
+      <div class="gold-bar"></div>
+      <h1>Proposal Insight Engine</h1>
+      <p>Mindanao State University – Iligan Institute of Technology &nbsp;|&nbsp; Administrative Cluster Analytics</p>
+    </header>
+    <div class="section-title">Upload Proposal File</div>
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-icon">📂</div>
+      <p class="upload-label">Drag & drop or <label class="browse-link" for="file-input">browse</label></p>
+      <p class="upload-sub">Accepts .xlsx, .xls, .csv</p>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)" />
+    </div>
+    <div class="upload-status hidden" id="upload-status"></div>
+    <div class="progress-wrap hidden" id="progress-wrap">
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">Uploading…</div>
+    </div>
+    <div class="section-title" style="margin-top:2.5rem">Upload History</div>
+    <div id="history-wrap"><div class="loading-block"><div class="spinner"></div><span>Loading history…</span></div></div>
+  </section>
+
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
