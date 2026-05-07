@@ -75,6 +75,8 @@ select, input { font-family: inherit; }
 .main {
   margin-left: var(--sidebar-w); flex: 1;
   padding: 2rem 2.5rem 3rem; min-height: 100vh;
+  max-width: calc(100vw - var(--sidebar-w));
+  overflow-x: hidden;
 }
 .page { animation: fadeIn .22s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -234,7 +236,7 @@ select, input { font-family: inherit; }
 }
 .tab-btn:hover { color: var(--maroon); }
 .tab-btn.active { color: var(--maroon); border-bottom-color: var(--maroon); }
-.tab-panel { animation: fadeIn .18s ease; }
+.tab-panel { animation: fadeIn .18s ease; max-width: 100%; overflow-x: hidden; }
 
 /* ══════════════ KEYWORD CONTROLS ══════════════ */
 .kw-controls {
@@ -310,6 +312,8 @@ select, input { font-family: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--gold) var(--surface-alt);
+  width: 100%;
+  max-width: 100%;
 }
 .table-wrap::-webkit-scrollbar { height: 8px; width: 8px; }
 .table-wrap::-webkit-scrollbar-track { background: var(--surface-alt); border-radius: 4px; }

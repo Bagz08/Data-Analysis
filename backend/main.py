@@ -327,7 +327,18 @@ def api_clusters():
     cm = fetch_clusters_map(sb)
     id2n = _id_to_name(cm)
     try:
-        rows = sb.table("proposals").select("cluster_id,resp_center").execute().data or []
+        # Paginate to get ALL proposals (Supabase default limit is 1000)
+        all_rows = []
+        offset = 0
+        while True:
+            batch = (sb.table("proposals")
+                     .select("cluster_id,resp_center")
+                     .range(offset, offset + 999).execute().data or [])
+            all_rows.extend(batch)
+            if len(batch) < 1000:
+                break
+            offset += 1000
+        rows = all_rows
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -356,9 +367,19 @@ def api_proposals(cluster_name: str):
     if cid is None:
         return {"columns": [], "rows": [], "count": 0, "rc_count": 0, "kw_count": 0}
     try:
-        rows = (sb.table("proposals")
-                .select("id,cluster_id,resp_center,content_text,keywords")
-                .eq("cluster_id", cid).execute().data or [])
+        # Paginate to get ALL proposals for this cluster
+        all_rows = []
+        offset = 0
+        while True:
+            batch = (sb.table("proposals")
+                     .select("id,cluster_id,resp_center,content_text,keywords")
+                     .eq("cluster_id", cid)
+                     .range(offset, offset + 999).execute().data or [])
+            all_rows.extend(batch)
+            if len(batch) < 1000:
+                break
+            offset += 1000
+        rows = all_rows
     except Exception as e:
         raise HTTPException(500, str(e))
     if not rows:
@@ -583,9 +604,19 @@ def api_keywords(req: KeywordRequest):
         return {"results": [], "chart_data": {}}
 
     try:
-        rows = (sb.table("proposals")
-                .select("id,resp_center,content_text,keywords")
-                .eq("cluster_id", cid).execute().data or [])
+        # Paginate to get ALL proposals for this cluster
+        all_rows = []
+        offset = 0
+        while True:
+            batch = (sb.table("proposals")
+                     .select("id,resp_center,content_text,keywords")
+                     .eq("cluster_id", cid)
+                     .range(offset, offset + 999).execute().data or [])
+            all_rows.extend(batch)
+            if len(batch) < 1000:
+                break
+            offset += 1000
+        rows = all_rows
     except Exception as e:
         raise HTTPException(500, str(e))
     if not rows:
@@ -761,21 +792,14 @@ async def api_upload(
         resp_raw    = safe_str(row.get(resp_col, ""))    if resp_col    else ""
         content_raw = safe_str(row.get(content_col, "")) if content_col else ""
 
-        kws: list[str] = []
-        if content_raw and len(content_raw) >= 15:
-            try:
-                kws = [kw for kw, _ in kbrt.extract_keywords(
-                    content_raw, keyphrase_ngram_range=(1, 2),
-                    stop_words="english", top_n=8)]
-            except Exception: pass
-
         # Store ALL original columns as JSON in content_text
+        # Keywords are extracted on-demand during analysis, not during upload
         row_data = {k: clean_entry(v) for k, v in row.items()}
         records.append({
             "cluster_id":   clean_entry(mid),
             "resp_center":  clean_entry(resp_raw) or None,
             "content_text": json.dumps(row_data, ensure_ascii=False),
-            "keywords":     clean_entry(kws),
+            "keywords":     [],
             "file_id":      None,  # will be set after insert
         })
 
@@ -802,14 +826,8 @@ async def api_upload(
     if file_record and file_record.get("id"):
         fid = file_record["id"]
         try:
-            # Get the proposal IDs just inserted (most recent N rows)
-            recent = (sb.table("proposals")
-                      .select("id")
-                      .is_("file_id", "null")
-                      .order("id", desc=True)
-                      .limit(len(records)).execute().data or [])
-            for p in recent:
-                sb.table("proposals").update({"file_id": fid}).eq("id", p["id"]).execute()
+            # Batch update: set file_id on all proposals that don't have one yet
+            sb.table("proposals").update({"file_id": fid}).is_("file_id", "null").execute()
         except Exception: pass
 
     fallback_name = id2n.get(fallback_id, FALLBACK_CLUSTER) if unmatched_count > 0 else ""
